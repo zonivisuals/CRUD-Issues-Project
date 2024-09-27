@@ -3,7 +3,7 @@ import profilePic from '../assets/profilePic.png'
 import {FaSearch} from "react-icons/fa"
 const navbar = () => {
   return (
-    <div className='px-8 pt-5 flex items-start justify-between'>
+    <div className='flex items-start justify-between'>
         <div>
             <p className='text-[2.0625em] font-medium text-white'>Student Feedback</p>
             <p className='text-[#d5cefd] text-sm font-normal'>manage all your student feedback in one place</p>
