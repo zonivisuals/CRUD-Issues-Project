@@ -1,8 +1,9 @@
 import React from 'react'
+import InfoCard from '../components/infoCard'
 
 const admin = () => {
   return (
-    <div>admin</div>
+    <InfoCard title="All Feedback" totalRequests={1084} monthlyRequests={30} />
   )
 }
 
