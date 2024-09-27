@@ -9,7 +9,7 @@ interface InfoCardProps {
 const infoCard = (props: InfoCardProps) => {
   return (
     <div className='flex flex-col p-5 border border-white border-opacity-15 rounded-2xl w-56 bg-[#F8F6FF]/[0.04]'>
-        <p className='text-[#d5cefd] text-sm'>{props.title}</p>
+        <p className='text-[#BEBBCE] text-sm'>{props.title}</p>
         
         <div className='flex flex-row items-end gap-1 text-white'>
             <p className='text-2xl font-medium'>{props.totalRequests}</p>
