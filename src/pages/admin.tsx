@@ -1,5 +1,6 @@
 import React from 'react'
 import InfoCard from '../components/infoCard'
+import IssuesTable from '../components/issuesTable'
 
 const admin = () => {
   return (
@@ -10,6 +11,7 @@ const admin = () => {
         <InfoCard title="Pending" totalRequests={1084} monthlyRequests={30} />
         <InfoCard title="In Progress" totalRequests={1084} monthlyRequests={30} />
       </div>
+        <IssuesTable />
     </div>
   )
 }
