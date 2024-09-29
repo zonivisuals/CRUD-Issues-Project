@@ -1,0 +1,24 @@
+/* tailwind.css */
+
+/* Import Tailwind's base styles (like resets and typography) */
+@tailwind base;
+
+/* Import Tailwind's built-in component styles */
+@tailwind components;
+
+/* Import Tailwind's utility classes */
+@tailwind utilities;
+
+/* Custom styles for your specific elements */
+th{
+    @apply px-4 py-2.5 text-[#BEBBCE] text-sm font-semibold;
+}
+
+.td-title{
+    @apply  text-white text-sm font-semibold;
+}
+
+td{
+    @apply p-4
+}
+
