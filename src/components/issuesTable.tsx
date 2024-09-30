@@ -1,38 +1,106 @@
 import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { BsThreeDots } from "react-icons/bs"; // For the action button
 import {FaSearch} from "react-icons/fa"
 import './styles/issuesTable.css'
-
+import { fetchIssues, deleteIssue } from "../service/api";
 
 interface Issue {
-  id: number;
+  id: string;
   title: string;
   type: string;
   status: string;
   createdAt: string;
 }
 
-const data: Issue[] = [
-  // Sample data
-  { id: 1, title: "It is a long established fact that a reader...", type: "Bug", status: "Solved", createdAt: "05/05/2024" },
-  { id: 2, title: "It is a long established fact that a reader...", type: "Feature", status: "InProgress", createdAt: "05/06/2024" },
-  { id: 3, title: "It is a long established fact that a reader...", type: "Feature", status: "Pending", createdAt: "05/06/2024" },
-  { id: 4, title: "It is a long established fact that a reader...", type: "Feature", status: "Active", createdAt: "05/06/2024" },
-  // ... other rows
-];
-
 const statusColors: { [key: string]: string } = {
-  Solved: "bg-[#DCFCE71A] text-[#4ADE80] font-bold",
-  Pending: "bg-[#FF3B30]/[0.08] text-[#FF3B30] font-normal",
-  InProgress: "bg-[#FF9010]/[0.08] text-[#FF9010] font-normal",
-  Active: "bg-[#DCFCE71A] text-[#4ADE80] font-normal"
+  SOLVED: "bg-[#DCFCE71A] text-[#4ADE80] font-bold",
+  PENDING: "bg-[#FF3B30]/[0.08] text-[#FF3B30] font-normal",
+  IN_PROGRES: "bg-[#FF9010]/[0.08] text-[#FF9010] font-normal",
+  ACTIVE: "bg-[#DCFCE71A] text-[#4ADE80] font-normal"
 };
 
 const IssuesTable = () => {
-  const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const queryClient = useQueryClient();
   
-  return (
-    
+  
+  const [selectedActionRow, setselectedActionRow] = useState<string| null>(null);
+  const [selectedIssues, setSelectedIssues] = useState<string []>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  //Fetching issues using React Query
+  const { data: issuesData, error, isLoading } = useQuery('issues', fetchIssues);
+  const issues = issuesData?.issues || [];
+  const meta = issuesData?.meta || {};
+
+
+  //one issue checkbox handler
+  function checkboxHandler(e:any){
+      let isSelected = e.target.checked;
+      let value = e.target.value;
+
+      if( isSelected ){
+        setSelectedIssues( [...selectedIssues, value ] )
+      }else{
+        setSelectedIssues((prevData)=>{
+          return prevData.filter((id)=>{
+            return id!==value
+          })
+        })
+      }
+  }
+
+  //all issues checkbox handler
+	function checkAllHandler(){
+		if( issues.length === selectedIssues.length ){
+			setSelectedIssues( [] )
+		}else{
+			const postIds = issues.map((issue:any)=>{
+				return issue.id
+			})
+			setSelectedIssues( postIds )
+		}
+	}
+
+  //deleting issues
+  const mutation = useMutation(deleteIssue, {
+    onSuccess: () => {
+      // Invalidate and refetch the issues after successful deletion
+      queryClient.invalidateQueries('issues');
+    },
+  });
+
+  const handleDelete = async () => {
+    try {
+      // Loop through selectedIssues and delete them one by one
+      await Promise.all(selectedIssues.map(issueId => mutation.mutateAsync(issueId)));
+      if(selectedActionRow && selectedIssues.length === 0){
+        mutation.mutateAsync(selectedActionRow)
+      }
+      // Clear selected issues after successful deletion
+      setSelectedIssues([]);
+    } catch (error) {
+      console.error("Failed to delete issues:", error);
+    }
+  };
+  
+  //pagination
+  const handleNextPage = () => {
+    setCurrentPage((prevPage) => Math.min(prevPage + 1, meta.totalPages));
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
+  };
+
+ // Pagination state
+ const totalIssues = meta.totalCount;
+ const totalPages = Math.ceil(totalIssues / meta.pageSize);
+
+ if (isLoading) return <div>Loading...</div>;
+ if (error) return <div>Error fetching issues: {'error'}</div>;
+
+  return (    
     <div id="issues-table" className="border border-[#FFFFFF1A] rounded-2xl flex flex-col gap-5 bg-[#F8F6FF]/[0.04]">
 
         {/* table header */}
@@ -67,7 +135,9 @@ const IssuesTable = () => {
         <div className="pl-4 flex items-center gap-3">
             <span className="text-white">1 selected</span>
             <svg width="1" height="34" viewBox="0 0 1 34" fill="none" xmlns="http://www.w3.org/2000/svg"><line opacity="0.3" x1="0.5" y1="2.18557e-08" x2="0.499999" y2="34" stroke="#9B99AD"/></svg>
-            <button className="flex items-center gap-2">
+            
+            {/*deletion button */}
+            <button className="flex items-center gap-2" onClick={handleDelete}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M7.87495 0.899994C6.50805 0.899994 5.39995 2.00809 5.39995 3.37499V3.77342C4.6842 3.84274 3.97437 3.93251 3.27107 4.04216C2.90273 4.09958 2.65068 4.44474 2.7081 4.81308C2.76553 5.18142 3.11068 5.43347 3.47902 5.37605L3.61215 5.35555L4.36949 14.8224C4.47239 16.1086 5.54624 17.1 6.83661 17.1H11.1631C12.4535 17.1 13.5273 16.1086 13.6302 14.8224L14.3876 5.35549L14.5211 5.37605C14.8894 5.43347 15.2346 5.18142 15.292 4.81308C15.3494 4.44474 15.0974 4.09958 14.729 4.04216C14.0257 3.9325 13.3158 3.84272 12.6 3.7734V3.37499C12.6 2.00809 11.4919 0.899994 10.125 0.899994H7.87495ZM9.00005 3.59999C9.75547 3.59999 10.5057 3.6227 11.25 3.66748V3.37499C11.25 2.75367 10.7463 2.24999 10.125 2.24999H7.87495C7.25363 2.24999 6.74995 2.75367 6.74995 3.37499V3.66749C7.49431 3.62271 8.24456 3.59999 9.00005 3.59999ZM7.79642 6.94502C7.77987 6.53113 7.43093 6.20904 7.01704 6.22559C6.60316 6.24215 6.28107 6.59109 6.29762 7.00497L6.56763 13.755C6.58419 14.1689 6.93313 14.491 7.34701 14.4744C7.76089 14.4578 8.08299 14.1089 8.06643 13.695L7.79642 6.94502ZM11.7024 7.00497C11.719 6.59109 11.3969 6.24215 10.983 6.22559C10.5691 6.20904 10.2202 6.53114 10.2036 6.94502L9.93363 13.695C9.91708 14.1089 10.2392 14.4578 10.6531 14.4744C11.0669 14.491 11.4159 14.1689 11.4324 13.755L11.7024 7.00497Z" fill="#BEBBCE"/></svg>
                 <span className="text-white font-semibold">Delete</span>
             </button>
@@ -77,12 +147,11 @@ const IssuesTable = () => {
     
       {/* Table */}
       <table className="min-w-full bg-transparent">
-        
         {/* Table head title*/}
         <thead className="border-b border-white/[0.15]">
             <tr className="text-left">
                 <td>
-                    <input type="checkbox"/>
+                    <input type="checkbox" onClick={checkAllHandler}/>
                 </td>
                 <th>Issue Title</th>
                 <th>Issue Type</th>
@@ -94,10 +163,10 @@ const IssuesTable = () => {
 
         {/* Table body*/}
         <tbody className="text-gray-600">
-          {data.map((issue) => (
+          {issues.map((issue:any) => (
             <tr key={issue.id} className="hover:bg-[#FFFFFF1F] cursor-pointer">
               <td>
-                <input type="checkbox" />
+                <input type="checkbox" checked={ selectedIssues.includes( issue.id ) } value={issue.id} onChange={checkboxHandler}/>
               </td>
               <td className="issue-title">
                 <span className="td-title">{issue.title}</span>
@@ -111,33 +180,39 @@ const IssuesTable = () => {
                   {issue.status}
                 </span>
               </td>
-              <td className="text-white text-sm font-normal">{issue.createdAt}</td>
+              <td className="text-white text-sm font-normal">{issue.createdAt.substring(0,10)}</td>
               <td className="relative" align="center">
                 <button
                     className="p-2.5 rounded-[0.25rem] focus:bg-[#0E0F2E] focus:border-2 focus:border-[#FF9010]" 
-                    onClick={() => setSelectedRow(selectedRow === issue.id ? null : issue.id)}
+                    onClick={() => setselectedActionRow(selectedActionRow === issue.id ? null : issue.id)}
                 >
                 <BsThreeDots className="fill-white"/>
                 </button>
-                {selectedRow === issue.id && (
+                {selectedActionRow === issue.id && (
                   <div className="absolute right-0 mt-1 w-40 bg-[#0E0F2E] border border-[#FFFFFF1A] text-white rounded-lg shadow-xl py-1 z-10">
                     <button className="block w-full px-4 py-2 text-left font-bold text-sm hover:bg-gray-700">View request</button>
                     <button className="block w-full px-4 py-2 text-left font-bold text-sm hover:bg-gray-700">Edit Status</button>
-                    <button className="block w-full px-4 py-2 text-left font-bold text-sm hover:bg-gray-700">Delete</button>
+                    <button onClick={handleDelete} className="block w-full px-4 py-2 text-left font-bold text-sm hover:bg-gray-700">Delete</button>
                   </div>
                 )}
               </td>
             </tr>
+            
           ))}
         </tbody>
       </table>
 
-
-      {/* Pagination test*/}
-      <div className="flex justify-between items-center py-4">
-        <button className="px-4 py-2 bg-gray-800 text-white rounded">&larr;</button>
-        <span>1</span>
-        <button className="px-4 py-2 bg-gray-800 text-white rounded">&rarr;</button>
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center p-4">
+        <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+          Next
+        </button>
       </div>
     </div>
   );
