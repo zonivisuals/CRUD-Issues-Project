@@ -1,4 +1,4 @@
-const ISSUES_API = 'http://localhost:4444/api/v1';
+export const ISSUES_API = 'http://localhost:4444/api/v1';
 
 //structure of the issue
 interface IssueData {
@@ -14,7 +14,8 @@ export const fetchIssues = async () => {
     if (!response.ok) {
       throw new Error('Failed to fetch issues');
     }
-    return response.json();
+    const data = await response.json()
+    return data
 }
 
 //create an issue    //here we can't set the type for the issue ? api bug
@@ -56,11 +57,10 @@ export const bulkDeleteIssue = async (issueIds: string[]) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ issuesIds: issueIds }),
+      body: JSON.stringify({ issuesIds: [] }),
     });
   
     const responseData = await response.json()
-    console.log('API Response:', responseData) //debug purpose
   
     if (!response.ok) {
       throw new Error(`Failed to bulk delete the issues: ${responseData.message || response.statusText}`) //return an error msg if there is error else return http status text
